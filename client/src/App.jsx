@@ -8,6 +8,8 @@ function App() {
   const [formData, setFormData] = useState({ studentId: '', name: '', email: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
+  const [editingStudent, setEditingStudent] = useState(null)
+  const [deletingStudentId, setDeletingStudentId] = useState(null)
 
   const fetchStudents = useCallback(async () => {
     try {
@@ -35,14 +37,55 @@ function App() {
     setSubmitMessage('')
   }
 
+  const handleEdit = (student) => {
+    setEditingStudent(student)
+    setFormData({
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+    })
+    setSubmitMessage('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingStudent(null)
+    setFormData({ studentId: '', name: '', email: '' })
+    setSubmitMessage('')
+  }
+
+  const handleDelete = async (student) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa sinh viên ${student.name}?`)) return
+
+    setDeletingStudentId(student._id)
+    setSubmitMessage('')
+
+    try {
+      const response = await fetch(`/api/students/${student._id}`, { method: 'DELETE' })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.message || 'Không thể xóa sinh viên')
+
+      if (editingStudent?._id === student._id) handleCancelEdit()
+      setSubmitMessage('Đã xóa sinh viên thành công.')
+      await fetchStudents()
+    } catch (requestError) {
+      setSubmitMessage(requestError.message || 'Đã xảy ra lỗi khi xóa sinh viên')
+    } finally {
+      setDeletingStudentId(null)
+    }
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     setIsSubmitting(true)
     setSubmitMessage('')
 
     try {
-      const response = await fetch('/api/students', {
-        method: 'POST',
+      const endpoint = editingStudent
+        ? `/api/students/${editingStudent._id}`
+        : '/api/students'
+      const response = await fetch(endpoint, {
+        method: editingStudent ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
@@ -51,7 +94,8 @@ function App() {
       if (!response.ok) throw new Error(result.message || 'Không thể thêm sinh viên')
 
       setFormData({ studentId: '', name: '', email: '' })
-      setSubmitMessage('Đã thêm sinh viên thành công.')
+      setSubmitMessage(editingStudent ? 'Đã cập nhật sinh viên thành công.' : 'Đã thêm sinh viên thành công.')
+      setEditingStudent(null)
       await fetchStudents()
     } catch (requestError) {
       setSubmitMessage(requestError.message || 'Đã xảy ra lỗi khi thêm sinh viên')
@@ -80,8 +124,8 @@ function App() {
 
       <section className="form-card" aria-labelledby="form-title">
         <div className="form-heading">
-          <p className="eyebrow">Thông tin mới</p>
-          <h2 id="form-title">Thêm sinh viên</h2>
+          <p className="eyebrow">{editingStudent ? 'Chỉnh sửa thông tin' : 'Thông tin mới'}</p>
+          <h2 id="form-title">{editingStudent ? 'Cập nhật sinh viên' : 'Thêm sinh viên'}</h2>
         </div>
         <form onSubmit={handleSubmit}>
           <label>
@@ -96,9 +140,12 @@ function App() {
             Email
             <input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="sinhvien@example.com" required />
           </label>
-          <button className="submit-button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Đang lưu...' : 'Thêm sinh viên'}
-          </button>
+          <div className="form-actions">
+            <button className="submit-button" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Đang lưu...' : editingStudent ? 'Lưu thay đổi' : 'Thêm sinh viên'}
+            </button>
+            {editingStudent && <button className="cancel-button" type="button" onClick={handleCancelEdit}>Hủy</button>}
+          </div>
         </form>
         {submitMessage && <p className={`form-message ${submitMessage.startsWith('Đã') ? 'success-message' : 'error-message'}`}>{submitMessage}</p>}
       </section>
@@ -124,7 +171,7 @@ function App() {
         {!isLoading && !error && students.length > 0 && (
           <div className="table-wrapper">
             <table>
-              <thead><tr><th>STT</th><th>Mã sinh viên</th><th>Họ và tên</th><th>Email</th></tr></thead>
+              <thead><tr><th>STT</th><th>Mã sinh viên</th><th>Họ và tên</th><th>Email</th><th>Thao tác</th></tr></thead>
               <tbody>
                 {students.map((student, index) => (
                   <tr key={student._id || student.studentId}>
@@ -132,6 +179,14 @@ function App() {
                     <td><span className="student-id">{student.studentId}</span></td>
                     <td className="name-cell">{student.name}</td>
                     <td><a href={`mailto:${student.email}`}>{student.email}</a></td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="edit-button" type="button" onClick={() => handleEdit(student)}>Sửa</button>
+                        <button className="delete-button" type="button" onClick={() => handleDelete(student)} disabled={deletingStudentId === student._id}>
+                          {deletingStudentId === student._id ? 'Đang xóa...' : 'Xóa'}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

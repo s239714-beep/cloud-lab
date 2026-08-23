@@ -35,6 +35,38 @@ app.post('/api/students', async (req, res) => {
   }
 });
 
+app.put('/api/students/:id', async (req, res) => {
+  try {
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!student) {
+      return res.status(404).json({ message: 'Không tìm thấy sinh viên' });
+    }
+
+    res.json(student);
+  } catch (err) {
+    res.status(400).json({ message: 'Dữ liệu sinh viên không hợp lệ' });
+  }
+});
+
+app.delete('/api/students/:id', async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+
+    if (!student) {
+      return res.status(404).json({ message: 'Không tìm thấy sinh viên' });
+    }
+
+    res.json({ message: 'Đã xóa sinh viên thành công', student });
+  } catch (err) {
+    res.status(400).json({ message: 'Không thể xóa sinh viên' });
+  }
+});
+
 // Câu 33: Kết nối Express Backend với MongoDB Atlas
 const mongoUri = process.env.MONGODB_URI;
 
