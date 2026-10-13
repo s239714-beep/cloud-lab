@@ -10,6 +10,7 @@ export default defineConfig({
     },
   },
   preview: {
+    allowedHosts: true,
     proxy: {
       '/api': process.env.BACKEND_URL || 'http://localhost:5000',
     },
