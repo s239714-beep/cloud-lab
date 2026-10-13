@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 
 // Đọc URL Backend từ biến môi trường Vite hoặc tự động chọn Backend mặc định trên Render
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://cloud-lab-3rht.onrender.com'
+const API_BASE_URL = ''
 
 function App() {
   const [students, setStudents] = useState([])
