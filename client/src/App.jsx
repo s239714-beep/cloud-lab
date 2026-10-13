@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 
+// Đọc URL Backend từ biến môi trường Vite hoặc tự động chọn Backend mặc định trên Render
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://cloud-lab-3rht.onrender.com'
+
 function App() {
   const [students, setStudents] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -13,7 +16,7 @@ function App() {
 
   const fetchStudents = useCallback(async () => {
     try {
-      const response = await fetch('/api/students')
+      const response = await fetch(`${API_BASE_URL}/api/students`)
       if (!response.ok) throw new Error('Không thể kết nối đến máy chủ')
 
       const data = await response.json()
@@ -61,7 +64,7 @@ function App() {
     setSubmitMessage('')
 
     try {
-      const response = await fetch(`/api/students/${student._id}`, { method: 'DELETE' })
+      const response = await fetch(`${API_BASE_URL}/api/students/${student._id}`, { method: 'DELETE' })
       const result = await response.json()
       if (!response.ok) throw new Error(result.message || 'Không thể xóa sinh viên')
 
@@ -82,8 +85,8 @@ function App() {
 
     try {
       const endpoint = editingStudent
-        ? `/api/students/${editingStudent._id}`
-        : '/api/students'
+        ? `${API_BASE_URL}/api/students/${editingStudent._id}`
+        : `${API_BASE_URL}/api/students`
       const response = await fetch(endpoint, {
         method: editingStudent ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -161,7 +164,7 @@ function App() {
         {!isLoading && error && (
           <div className="state-message error-state">
             <strong>Không thể tải dữ liệu</strong>
-            <span>{error}. Hãy kiểm tra Backend đang chạy ở cổng 5000.</span>
+            <span>{error}. Hãy kiểm tra kết nối Backend API.</span>
             <button type="button" onClick={handleRefresh}>Thử lại</button>
           </div>
         )}
